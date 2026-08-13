@@ -572,6 +572,7 @@ function render() {
 }
 
 function downloadPdf() {
+  window.scrollTo(0, 0);
   const el = document.getElementById('quote-doc');
   const clientName = document.getElementById('client-name').value || '報價單';
   const today = new Date().toISOString().slice(0,10);
@@ -579,8 +580,9 @@ function downloadPdf() {
     margin: 0,
     filename: `FUN星球報價單_${clientName}_${today}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth, windowHeight: el.scrollHeight },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
   }).from(el).save();
 }
 
