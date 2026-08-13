@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUN星球 報價單產生器</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --purple: #72469C;
+    --blue: #60B7E6;
+    --yellow: #FDCE73;
+    --cream: #FFF7ED;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--cream);
+    color: #3a2a52;
+  }
+  .app {
+    display: flex;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    align-items: flex-start;
+  }
+  .panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(114,70,156,0.08);
+  }
+  .form-panel {
+    width: 460px;
+    flex-shrink: 0;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+  }
+  .preview-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  h1 {
+    color: var(--purple);
+    font-size: 18px;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: #9a8ab8;
+    margin-bottom: 16px;
+  }
+  h2.section-title {
+    font-size: 13px;
+    color: var(--purple);
+    font-weight: 700;
+    margin: 18px 0 8px;
+    padding-top: 12px;
+    border-top: 1px solid #f0e8f7;
+  }
+  h2.section-title:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple);
+    margin: 8px 0 4px;
+  }
+  input[type="text"], input[type="number"], input[type="date"], textarea, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #e6dcf2;
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--cream);
+    color: #3a2a52;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 50px; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue); }
+  .row2 { display: flex; gap: 8px; }
+  .row2 > div { flex: 1; }
+  .client-type-toggle {
+    display: flex;
+    gap: 6px;
+  }
+  .client-type-toggle .opt {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border: 1.5px solid #e6dcf2;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--purple);
+    cursor: pointer;
+  }
+  .client-type-toggle .opt.selected {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+  }
+  .add-item-row { display: flex; gap: 6px; margin-top: 6px; }
+  .add-item-row select { flex: 1; }
+  .btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--purple);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn.secondary { background: var(--blue); }
+  .btn.small { padding: 4px 8px; font-size: 11px; }
+  .btn.danger { background: #d97a7a; }
+  .item-card {
+    border: 1.5px solid #e6dcf2;
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 10px;
+    background: var(--cream);
+  }
+  .item-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .item-card-head .name { font-size: 13px; font-weight: 700; color: var(--purple); }
+  .item-card-head .tax-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #fff;
+    color: #9a8ab8;
+    border: 1px solid #e6dcf2;
+  }
+  .pdf-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--yellow);
+    color: #5a4210;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  /* ===== 報價單預覽（PDF 輸出範圍） ===== */
+  #quote-doc {
+    background: #fff;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 44px;
+    color: #2a2a2a;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  #quote-doc .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid var(--purple);
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+  #quote-doc .brand { font-size: 22px; font-weight: 800; color: var(--purple); }
+  #quote-doc .brand-sub { font-size: 11px; color: #8a7aa8; margin-top: 2px; }
+  #quote-doc .doc-title { font-size: 20px; font-weight: 800; color: #2a2a2a; text-align: right; }
+  #quote-doc .doc-meta { font-size: 11px; color: #666; text-align: right; margin-top: 4px; }
+  #quote-doc .client-block {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+    font-size: 12px;
+  }
+  #quote-doc .client-block .col { flex: 1; }
+  #quote-doc .client-block .col-title { font-weight: 700; color: var(--purple); margin-bottom: 4px; }
+  table.quote-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 11.5px;
+  }
+  table.quote-table th {
+    background: var(--purple);
+    color: #fff;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 700;
+  }
+  table.quote-table td {
+    padding: 7px 6px;
+    border-bottom: 1px solid #e6dcf2;
+    vertical-align: top;
+  }
+  table.quote-table td.num { text-align: center; white-space: nowrap; }
+  table.quote-table td.desc { font-size: 10.5px; color: #555; }
+  table.quote-table tr.sum-row td { font-weight: 700; text-align: right; border-bottom: none; padding-top: 10px; }
+  table.quote-table tr.sum-row.total td { font-size: 14px; color: var(--purple); }
+  #quote-doc .notes {
+    margin-top: 20px;
+    font-size: 11px;
+    color: #444;
+  }
+  #quote-doc .notes h3 {
+    font-size: 12px;
+    color: var(--purple);
+    margin: 14px 0 6px;
+  }
+  #quote-doc .notes ol, #quote-doc .notes ul { margin: 0; padding-left: 18px; }
+  #quote-doc .notes li { margin-bottom: 3px; }
+  #quote-doc .sign-block {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px dashed #ccc;
+    font-size: 11px;
+  }
+  #quote-doc .sign-block .col { width: 47%; }
+  #quote-doc .sign-line { margin-top: 24px; border-bottom: 1px solid #999; }
+
+  @media print {
+    body { background: #fff; }
+    .form-panel, .pdf-btn { display: none; }
+    .app { padding: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="panel form-panel">
+    <h1>💰 報價單產生器</h1>
+    <div class="subtitle">選品項、填數量，右邊自動產出漂亮報價單</div>
+
+    <h2 class="section-title">客戶資訊</h2>
+    <label>客戶主類型（影響預設稅務顯示，個別品項仍依自身規則）</label>
+    <div class="client-type-toggle">
+      <div class="opt selected" data-type="B" onclick="setClientType('B')">企業／機構（稅外加）</div>
+      <div class="opt" data-type="A" onclick="setClientType('A')">一般民眾（含稅）</div>
+    </div>
+
+    <label>單位／客戶名稱</label>
+    <input type="text" id="client-name" placeholder="例：吉的堡教學中心" oninput="render()">
+
+    <div class="row2">
+      <div>
+        <label>統一編號</label>
+        <input type="text" id="client-tax-id" oninput="render()">
+      </div>
+      <div>
+        <label>聯絡人</label>
+        <input type="text" id="client-contact" oninput="render()">
+      </div>
+    </div>
+    <div class="row2">
+      <div>
+        <label>電話</label>
+        <input type="text" id="client-phone" oninput="render()">
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="text" id="client-email" oninput="render()">
+      </div>
+    </div>
+
+    <h2 class="section-title">服務品項</h2>
+    <div class="add-item-row">
+      <select id="service-select"></select>
+      <button class="btn" onclick="addItem()">+ 新增</button>
+    </div>
+    <div id="items-list"></div>
+
+    <h2 class="section-title">交通出勤費</h2>
+    <input type="text" id="transport-note" placeholder="例：另計 / 實報實銷 / 高雄市區免收" value="另計，不列入本報價" oninput="render()">
+
+    <h2 class="section-title">活動資訊</h2>
+    <textarea id="activity-info" placeholder="活動日期、地點、場次說明⋯（可多行）" oninput="render()"></textarea>
+
+    <h2 class="section-title">報價單有效期</h2>
+    <input type="text" id="validity" value="即日起 1 個月" oninput="render()">
+
+    <h2 class="section-title">備註條款</h2>
+    <textarea id="notes-text" style="min-height:160px;" oninput="render()"></textarea>
+
+    <button class="pdf-btn" onclick="downloadPdf()">📄 下載 PDF</button>
+  </div>
+
+  <div class="preview-wrap">
+    <div class="panel" style="padding:24px;">
+      <div id="quote-doc"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===== 服務品項資料（來源：FUN星球服務總覽.md，2026-04-23 版）=====
+const SERVICES = [
+  // A 公開場活動（一般民眾，含稅）
+  { id:'A1', cat:'A 公開場活動', name:'寶寶故事（單場）', unit:'人', price:300, taxIncluded:true,
+    desc:'0～3歲認知主題親子互動故事，每位幼兒至少一位成人陪同，陪同家長免費。' },
+  { id:'A2', cat:'A 公開場活動', name:'招牌故事（單場）', unit:'人', price:240, taxIncluded:true,
+    desc:'1位專業故事姐姐＋大型繪本道具，2個互動故事，適合3歲以上，陪同家長免費。' },
+  { id:'A3', cat:'A 公開場活動', name:'線上讀書會', unit:'人', price:300, taxIncluded:true,
+    desc:'故事姐姐透過共讀繪本引導孩子描述事件、思考問題、輪流發言，每場60分鐘，需自備指定繪本與 Zoom。' },
+  { id:'A4', cat:'A 公開場活動', name:'線上互動玩故事（單次）', unit:'設備', price:150, taxIncluded:true,
+    desc:'故事姐姐透過 Zoom 即時視訊互動說故事，每場40分鐘，不限鏡頭前人數，以設備數計費。' },
+  // B 企業與機構活動委辦
+  { id:'B1', cat:'B 企業／機構活動委辦', name:'大型外場故事活動（60人以下）', unit:'場', price:6500, taxIncluded:false,
+    desc:'大型繪本道具＋擴音，60分鐘含1位故事姐姐、2套道具、2個故事。高雄市區免車馬費，市區外依距離報價。訂金50%，取消規範：4週前告知退20%，4週內不退。' },
+  { id:'B1b', cat:'B 企業／機構活動委辦', name:'大型外場故事活動（61人以上）', unit:'場', price:8000, taxIncluded:false,
+    desc:'同上，適用61人以上場次。' },
+  { id:'B2', cat:'B 企業／機構活動委辦', name:'到府故事活動（實體）', unit:'場', price:3000, taxIncluded:true,
+    desc:'故事姐姐到指定室內場地講故事，60分鐘，最多12位小朋友，場地總人數不超過25人。若表演故事非FUN星球自有教案，需加收企劃編撰費。' },
+  { id:'B3', cat:'B 企業／機構活動委辦', name:'線上故事活動（企業版）', unit:'場', price:10000, taxIncluded:false,
+    desc:'30–40分鐘，人數不限，開放主辦方錄影存檔。' },
+  { id:'B4', cat:'B 企業／機構活動委辦', name:'思辨星球', unit:'場', price:6000, taxIncluded:true,
+    desc:'以故事為引導帶領孩子深度討論、思辨與表達，120分鐘，建議20人以內、國小二年級以上。若指定特定故事需加收企劃編撰費。' },
+  { id:'B5', cat:'B 企業／機構活動委辦', name:'即興兒童故事劇場（商演，100人以下）', unit:'場', price:12000, taxIncluded:false,
+    desc:'沒有劇本，演員用觀眾提供的點子即興演出，30分鐘、4位演出者、2–3個即興短劇。不含器材，主辦方需自備舞台音響。公家單位×1.5～2（上限$100,000）。' },
+  { id:'B5b', cat:'B 企業／機構活動委辦', name:'即興兒童故事劇場（商演，200人以內）', unit:'場', price:18000, taxIncluded:false,
+    desc:'同上，適用200人以內場次。' },
+  { id:'B6', cat:'B 企業／機構活動委辦', name:'繪本演唱會（自有電子書版）', unit:'場', price:43000, taxIncluded:false,
+    desc:'90分鐘，3位故事姐姐，每位參與兒童獲4本電子書QR Code，含社群宣傳貼文。不含音響燈光器材與交通費。' },
+  { id:'B7', cat:'B 企業／機構活動委辦', name:'繪本演唱會（出版社合作版）', unit:'場', price:52000, taxIncluded:false,
+    desc:'90分鐘，3位故事姐姐，每位參與兒童獲一本實體繪本，含社群宣傳貼文。不含音響燈光器材與交通費。' },
+  // C 內容製作與企劃
+  { id:'C1', cat:'C 內容製作與企劃', name:'市售繪本企劃編撰費', unit:'則', price:null, priceHint:'15,000–25,000', taxIncluded:false,
+    desc:'根據客戶指定市售繪本，設計引發兒童思考與討論的實體活動教案（含活動簡報），交付文字腳本形式。不含出版社授權金。' },
+  { id:'C2', cat:'C 內容製作與企劃', name:'原創故事編撰企劃費', unit:'則', price:null, priceHint:'35,000–50,000', taxIncluded:false,
+    desc:'依客戶提供主題、元素創作一則適齡故事，交付故事文字大綱＋分鏡草圖。不含插圖繪製及道具製作。' },
+  { id:'C3', cat:'C 內容製作與企劃', name:'故事插圖繪製', unit:'張', price:null, priceHint:'1,500–5,000', taxIncluded:false,
+    desc:'專為兒童實體故事活動設計的原創插圖，根據主題及客戶指定元素創作。不含故事表演執行。' },
+  { id:'C4', cat:'C 內容製作與企劃', name:'Podcast故事錄製與上架', unit:'則', price:20000, taxIncluded:false,
+    desc:'將指定繪本錄製為Podcast節目於FUN星球故事頻道上架播出，廣告檔期結束後提供平台結案數據。' },
+  { id:'C5', cat:'C 內容製作與企劃', name:'社群平台宣傳貼文', unit:'則', price:null, priceHint:'3,000–5,000', taxIncluded:false,
+    desc:'活動相關圖文宣傳（素材需廠商提供，FUN星球微調文章風格）。若企劃與執行皆為FUN星球則贈送。' },
+  { id:'C6', cat:'C 內容製作與企劃', name:'活動引導與主持（10分鐘起）', unit:'10分', price:null, priceHint:'依規模而定', taxIncluded:false,
+    desc:'需搭配說故事活動，故事姐姐以熱情活潑態度為活動引導與主持。' },
+  { id:'C7', cat:'C 內容製作與企劃', name:'延伸活動企劃', unit:'場', price:null, priceHint:'依討論而定', taxIncluded:false,
+    desc:'依客戶訴求與場地性質企劃延伸活動（主題、內容設計、場地建議、時間表），需搭配說故事活動。' },
+  // D 教學培訓
+  { id:'D1', cat:'D 教學培訓', name:'說故事互動技巧實作坊', unit:'小時', price:null, priceHint:'依內容與規模議定時薪', taxIncluded:false,
+    desc:'適合學校老師、才藝老師、幼教科系、家長、說故事志工。依內容目標與時數議定報價，車馬費另計。' },
+  // E 教具製作
+  { id:'E1', cat:'E 教具製作', name:'大型繪本教具（一般尺寸 90×60）', unit:'本', price:1800, taxIncluded:false,
+    desc:'展開90×60cm，闔上45×60cm。基本單價含封面封底＋內頁2面，每增一面+350元。需簽署合作備忘錄後方能開始製作。' },
+  { id:'E2', cat:'E 教具製作', name:'大型繪本教具（大型尺寸 120×90）', unit:'本', price:2200, taxIncluded:false,
+    desc:'展開120×90cm，闔上60×60cm。基本單價含封面封底＋內頁2面，每增一面+550元。需簽署合作備忘錄後方能開始製作。' },
+];
+
+const DEFAULT_NOTES = `1. 以上費用均開立三聯式統一發票。
+2. 確定合作後需收取總金額 50% 為訂金，以確定活動日期並簽署合約。訂金需於雙方簽署合約後 3 個工作日內支付完成。
+3. 本報價單有效期限詳如上方所載。
+4. 若表演故事非 FUN星球自有教案、教具，需額外加收企劃編撰費。
+5. 若需故事姐姐協助進行與故事內容無關之活動（如訪談、主持、導覽、商品介紹等），需在報價前提出，報價確定後不再接受，否則 FUN星球有權收取額外費用。
+6. 繪本運用如需取得出版社授權，由雙方協議負責方。
+7. 故事活動與表演影音錄製之版權由 FUN星球與主辦單位共同擁有。
+
+【取消規範】
+・活動日 28 日前（含）告知取消：退還總金額 20%，其餘不退
+・活動日前 27～22 日告知取消：訂金不退，可保留延後使用最多半年（需提前 30 日預約新日期）
+・活動日前 21 日至當日告知取消：訂金不退，不得延後使用`;
+
+const TAX_RATE = 0.05;
+let clientType = 'B';
+let items = []; // {uid, serviceId, name, unit, price, qty, taxIncluded, desc}
+let uidSeed = 1;
+
+function initServiceSelect() {
+  const sel = document.getElementById('service-select');
+  let lastCat = '';
+  SERVICES.forEach(s => {
+    if (s.cat !== lastCat) {
+      const og = document.createElement('optgroup');
+      og.label = s.cat;
+      og.id = 'og-' + s.cat;
+      sel.appendChild(og);
+      lastCat = s.cat;
+    }
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name + (s.price ? `（$${s.price.toLocaleString()}/${s.unit}）` : `（${s.priceHint}）`);
+    sel.lastChild.appendChild(opt);
+  });
+}
+
+function setClientType(t) {
+  clientType = t;
+  document.querySelectorAll('.client-type-toggle .opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.type === t);
+  });
+  render();
+}
+
+function addItem() {
+  const sel = document.getElementById('service-select');
+  const svc = SERVICES.find(s => s.id === sel.value);
+  if (!svc) return;
+  items.push({
+    uid: uidSeed++,
+    name: svc.name,
+    unit: svc.unit,
+    price: svc.price || 0,
+    qty: 1,
+    taxIncluded: svc.taxIncluded,
+    desc: svc.desc
+  });
+  renderItemsList();
+  render();
+}
+
+function removeItem(uid) {
+  items = items.filter(i => i.uid !== uid);
+  renderItemsList();
+  render();
+}
+
+function updateItem(uid, field, value) {
+  const item = items.find(i => i.uid === uid);
+  if (!item) return;
+  if (field === 'price' || field === 'qty') {
+    item[field] = parseFloat(value) || 0;
+  } else {
+    item[field] = value;
+  }
+  render();
+}
+
+function renderItemsList() {
+  const list = document.getElementById('items-list');
+  list.innerHTML = items.map(item => `
+    <div class="item-card">
+      <div class="item-card-head">
+        <span class="name">${item.name}</span>
+        <span class="tax-badge">${item.taxIncluded ? '已含稅' : '稅外加'}</span>
+      </div>
+      <div class="row2">
+        <div>
+          <label>單價（${item.unit}）</label>
+          <input type="number" value="${item.price}" oninput="updateItem(${item.uid},'price',this.value)">
+        </div>
+        <div>
+          <label>數量</label>
+          <input type="number" value="${item.qty}" oninput="updateItem(${item.uid},'qty',this.value)">
+        </div>
+      </div>
+      <label>說明（可編輯，例如加註場次地點）</label>
+      <textarea oninput="updateItem(${item.uid},'desc',this.value)">${item.desc}</textarea>
+      <button class="btn danger small" style="margin-top:6px;" onclick="removeItem(${item.uid})">刪除此列</button>
+    </div>
+  `).join('');
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('zh-Hant');
+}
+
+function render() {
+  const clientName = document.getElementById('client-name').value || '（客戶名稱）';
+  const taxId = document.getElementById('client-tax-id').value;
+  const contact = document.getElementById('client-contact').value;
+  const phone = document.getElementById('client-phone').value;
+  const email = document.getElementById('client-email').value;
+  const transport = document.getElementById('transport-note').value;
+  const activity = document.getElementById('activity-info').value;
+  const validity = document.getElementById('validity').value;
+  const notes = document.getElementById('notes-text').value || DEFAULT_NOTES;
+
+  let untaxedTotal = 0, includedTotal = 0;
+  const rows = items.map(item => {
+    const subtotal = item.price * item.qty;
+    if (item.taxIncluded) includedTotal += subtotal; else untaxedTotal += subtotal;
+    return `
+      <tr>
+        <td><strong>${item.name}</strong></td>
+        <td class="num">${item.unit}</td>
+        <td class="num">${fmt(item.price)}</td>
+        <td class="num">${item.qty}</td>
+        <td class="num">${fmt(subtotal)}</td>
+        <td class="desc">${item.desc.replace(/\n/g,'<br>')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const taxAmount = untaxedTotal * TAX_RATE;
+  const grandTotal = untaxedTotal + taxAmount + includedTotal;
+  const deposit = grandTotal * 0.5;
+
+  const today = new Date();
+  const roc = today.getFullYear() - 1911;
+  const dateStr = `民國 ${roc} 年 ${today.getMonth()+1} 月 ${today.getDate()} 日`;
+
+  document.getElementById('quote-doc').innerHTML = `
+    <div class="doc-header">
+      <div>
+        <div class="brand">FUN星球</div>
+        <div class="brand-sub">星球能量無限但時間有限公司｜統編 00012776</div>
+      </div>
+      <div>
+        <div class="doc-title">報價單</div>
+        <div class="doc-meta">報價日期：${dateStr}</div>
+      </div>
+    </div>
+
+    <div class="client-block">
+      <div class="col">
+        <div class="col-title">客戶資訊</div>
+        單位名稱：${clientName}<br>
+        統一編號：${taxId || '　'}<br>
+        聯絡人：${contact || '　'}<br>
+        電話：${phone || '　'}　Email：${email || '　'}
+      </div>
+      <div class="col">
+        <div class="col-title">FUN星球聯絡窗口</div>
+        聯絡人：劉珽愉（小魚姐姐）<br>
+        電話：0910-862-489<br>
+        Email：funstoryplanet@gmail.com<br>
+        LINE 官方：@kaw6438x
+      </div>
+    </div>
+
+    <table class="quote-table">
+      <tr><th style="width:16%">品項</th><th style="width:8%">單位</th><th style="width:10%">單價</th><th style="width:7%">數量</th><th style="width:10%">小計</th><th>說明</th></tr>
+      ${rows || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">尚未選擇服務品項</td></tr>'}
+      <tr class="sum-row"><td colspan="6">交通出勤費：${transport || '另計'}</td></tr>
+      <tr class="sum-row"><td colspan="6">未稅金額：${fmt(untaxedTotal)}　｜　營業稅（5%）：${fmt(taxAmount)}${includedTotal ? `　｜　已含稅品項：${fmt(includedTotal)}` : ''}</td></tr>
+      <tr class="sum-row total"><td colspan="6">含稅總計：${fmt(grandTotal)}</td></tr>
+    </table>
+
+    <div class="notes">
+      <h3>活動資訊</h3>
+      <div>${(activity || '（未填寫）').replace(/\n/g,'<br>')}</div>
+
+      <h3>備註</h3>
+      <ol>${notes.split('\n').filter(l=>l.trim()).map(l => `<li>${l.replace(/^\d+\.\s*/,'').replace(/^・/,'')}</li>`).join('')}</ol>
+
+      <h3>訂金</h3>
+      <div>本報價單含稅總計 ${fmt(grandTotal)} 元，確認合作需支付訂金 ${fmt(deposit)} 元（總額 50%）。</div>
+
+      <h3>報價單有效期</h3>
+      <div>${validity}</div>
+    </div>
+
+    <div class="sign-block">
+      <div class="col">
+        <div>客戶簽章（此報價單確認無誤，請簽章回傳，合作即成立）：</div>
+        <div class="sign-line"></div>
+        <div style="margin-top:6px;">日期：＿＿年＿＿月＿＿日</div>
+      </div>
+      <div class="col">
+        <div>FUN星球｜星球能量無限但時間有限公司</div>
+        <div style="margin-top:24px;">聯絡人：劉珽愉（小魚姐姐）</div>
+        <div>統一編號：00012776</div>
+      </div>
+    </div>
+  `;
+}
+
+function downloadPdf() {
+  const el = document.getElementById('quote-doc');
+  const clientName = document.getElementById('client-name').value || '報價單';
+  const today = new Date().toISOString().slice(0,10);
+  html2pdf().set({
+    margin: 0,
+    filename: `FUN星球報價單_${clientName}_${today}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(el).save();
+}
+
+document.getElementById('notes-text').value = DEFAULT_NOTES;
+initServiceSelect();
+render();
+</script>
+</body>
+</html>
