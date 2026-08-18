@@ -319,15 +319,6 @@
 <script>
 // ===== 服務品項資料（來源：FUN星球服務總覽.md，2026-04-23 版）=====
 const SERVICES = [
-  // A 公開場活動（一般民眾，含稅）
-  { id:'A1', cat:'A 公開場活動', name:'寶寶故事（單場）', unit:'人', price:300, taxIncluded:true,
-    desc:'0～3歲認知主題親子互動故事，每位幼兒至少一位成人陪同，陪同家長免費。' },
-  { id:'A2', cat:'A 公開場活動', name:'招牌故事（單場）', unit:'人', price:240, taxIncluded:true,
-    desc:'1位專業故事姐姐＋大型繪本道具，2個互動故事，適合3歲以上，陪同家長免費。' },
-  { id:'A3', cat:'A 公開場活動', name:'線上讀書會', unit:'人', price:300, taxIncluded:true,
-    desc:'故事姐姐透過共讀繪本引導孩子描述事件、思考問題、輪流發言，每場60分鐘，需自備指定繪本與 Zoom。' },
-  { id:'A4', cat:'A 公開場活動', name:'線上互動玩故事（單次）', unit:'設備', price:150, taxIncluded:true,
-    desc:'故事姐姐透過 Zoom 即時視訊互動說故事，每場40分鐘，不限鏡頭前人數，以設備數計費。' },
   // B 企業與機構活動委辦
   { id:'B1', cat:'B 企業／機構活動委辦', name:'大型外場故事活動（60人以下）', unit:'場', price:6500, taxIncluded:false,
     desc:'大型繪本道具＋擴音，60分鐘含1位故事姐姐、2套道具、2個故事。高雄市區免車馬費，市區外依距離報價。訂金50%，取消規範：4週前告知退20%，4週內不退。' },
@@ -370,6 +361,15 @@ const SERVICES = [
     desc:'展開90×60cm，闔上45×60cm。基本單價含封面封底＋內頁2面，每增一面+350元。需簽署合作備忘錄後方能開始製作。' },
   { id:'E2', cat:'E 教具製作', name:'大型繪本教具（大型尺寸 120×90）', unit:'本', price:2200, taxIncluded:false,
     desc:'展開120×90cm，闔上60×60cm。基本單價含封面封底＋內頁2面，每增一面+550元。需簽署合作備忘錄後方能開始製作。' },
+  // A 公開場活動（一般民眾，含稅）—— 幾乎不會用到，排在最後備用
+  { id:'A1', cat:'A 公開場活動', name:'寶寶故事（單場）', unit:'人', price:300, taxIncluded:true,
+    desc:'0～3歲認知主題親子互動故事，每位幼兒至少一位成人陪同，陪同家長免費。' },
+  { id:'A2', cat:'A 公開場活動', name:'招牌故事（單場）', unit:'人', price:240, taxIncluded:true,
+    desc:'1位專業故事姐姐＋大型繪本道具，2個互動故事，適合3歲以上，陪同家長免費。' },
+  { id:'A3', cat:'A 公開場活動', name:'線上讀書會', unit:'人', price:300, taxIncluded:true,
+    desc:'故事姐姐透過共讀繪本引導孩子描述事件、思考問題、輪流發言，每場60分鐘，需自備指定繪本與 Zoom。' },
+  { id:'A4', cat:'A 公開場活動', name:'線上互動玩故事（單次）', unit:'設備', price:150, taxIncluded:true,
+    desc:'故事姐姐透過 Zoom 即時視訊互動說故事，每場40分鐘，不限鏡頭前人數，以設備數計費。' },
 ];
 
 const DEFAULT_NOTES = `1. 以上費用均開立三聯式統一發票。
@@ -607,30 +607,18 @@ function downloadPdf() {
   const el = document.getElementById('quote-doc');
   const clientName = document.getElementById('client-name').value || '報價單';
   const today = new Date().toISOString().slice(0,10);
-
-  // 截圖前把報價單暫時搬到畫面左上角 (0,0)，避免它原本排在左側表單右邊，
-  // 導致 html2canvas 抓圖畫布寬度對不上實際偏移位置、把左半部裁掉的問題
-  const originalParent = el.parentNode;
-  const originalNextSibling = el.nextSibling;
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'position:fixed; left:0; top:0; width:900px; margin:0; background:#fff; z-index:99999;';
-  wrapper.appendChild(el);
-  document.body.appendChild(wrapper);
   window.scrollTo(0, 0);
 
-  function restoreDom() {
-    originalParent.insertBefore(el, originalNextSibling);
-    document.body.removeChild(wrapper);
-  }
-
+  // 不指定 windowWidth：html2pdf 內部本來就會把內容複製進一個跟 PDF 頁面等寬的容器再截圖，
+  // 若我們另外指定跟這個內建寬度不同的 windowWidth，容器會在模擬視窗裡置中，導致左右被裁掉。
   html2pdf().set({
     margin: 0,
     filename: `FUN星球報價單_${clientName}_${today}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth, windowHeight: el.scrollHeight },
+    html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['css', 'legacy'] }
-  }).from(el).save().then(restoreDom).catch(restoreDom);
+  }).from(el).save();
 }
 
 document.getElementById('notes-text').value = DEFAULT_NOTES;
