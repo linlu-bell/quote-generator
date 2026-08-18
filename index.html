@@ -293,8 +293,11 @@
     <div id="items-list"></div>
 
     <h2 class="section-title">交通出勤費</h2>
-    <input type="text" id="transport-note" placeholder="例：另計 / 實報實銷 / 高雄市區免收" value="另計，不列入本報價" oninput="render()">
+    <label>金額（高雄市區活動留空或填 0，這格就不會出現在報價單上；外縣市活動請填算好的來回總額）</label>
+    <input type="number" id="transport-amount" placeholder="0" oninput="render()">
     <a href="https://linlu-bell.github.io/car-fare-calculator/" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:12px;color:var(--blue);font-weight:700;text-decoration:none;">🚗 開新視窗算車馬費 →</a>
+    <label>說明（有填金額時才會顯示在報價單上，依實際交通方式調整）</label>
+    <textarea id="transport-desc" style="min-height:70px;" oninput="render()">此項目為FUN星球專業說故事姐姐前往高雄市區以外辦理活動之通勤與等待之出勤費用。故事姐姐高鐵／台鐵往返活動場地之交通將由活動主辦方派員接送。如需故事姐姐自行前往，將依車資收據實報實銷。</textarea>
 
     <h2 class="section-title">活動資訊</h2>
     <textarea id="activity-info" placeholder="活動日期、地點、場次說明⋯（可多行）" oninput="render()"></textarea>
@@ -508,7 +511,8 @@ function render() {
   const contact = document.getElementById('client-contact').value;
   const phone = document.getElementById('client-phone').value;
   const email = document.getElementById('client-email').value;
-  const transport = document.getElementById('transport-note').value;
+  const transportAmount = parseFloat(document.getElementById('transport-amount').value) || 0;
+  const transportDesc = document.getElementById('transport-desc').value;
   const activity = document.getElementById('activity-info').value;
   const validity = document.getElementById('validity').value;
   const notes = document.getElementById('notes-text').value || DEFAULT_NOTES;
@@ -528,6 +532,18 @@ function render() {
       </tr>
     `;
   }).join('');
+
+  const transportRow = transportAmount > 0 ? `
+    <tr>
+      <td><strong>交通出勤費用</strong></td>
+      <td class="num">來回</td>
+      <td class="num">${fmt(transportAmount)}</td>
+      <td class="num">1</td>
+      <td class="num">${fmt(transportAmount)}</td>
+      <td class="desc">${transportDesc.replace(/\n/g,'<br>')}</td>
+    </tr>
+  ` : '';
+  if (transportAmount > 0) untaxedTotal += transportAmount;
 
   const taxAmount = untaxedTotal * TAX_RATE;
   const grandTotal = untaxedTotal + taxAmount + includedTotal;
@@ -568,8 +584,8 @@ function render() {
 
     <table class="quote-table">
       <tr><th style="width:16%">品項</th><th style="width:8%">單位</th><th style="width:10%">單價</th><th style="width:7%">數量</th><th style="width:10%">小計</th><th>說明</th></tr>
-      ${rows || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">尚未選擇服務品項</td></tr>'}
-      <tr class="sum-row"><td colspan="6">交通出勤費：${transport || '另計'}</td></tr>
+      ${rows || transportRow ? '' : '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">尚未選擇服務品項</td></tr>'}
+      ${rows}${transportRow}
       <tr class="sum-row"><td colspan="6">未稅金額：${fmt(untaxedTotal)}　｜　營業稅（5%）：${fmt(taxAmount)}${includedTotal ? `　｜　已含稅品項：${fmt(includedTotal)}` : ''}</td></tr>
       <tr class="sum-row total"><td colspan="6">含稅總計：${fmt(grandTotal)}</td></tr>
     </table>
