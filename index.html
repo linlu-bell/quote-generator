@@ -308,6 +308,9 @@
     <h2 class="section-title">備註條款</h2>
     <textarea id="notes-text" style="min-height:160px;" oninput="render()"></textarea>
 
+    <button class="pdf-btn" style="background:var(--blue);" onclick="saveQuote()">💾 儲存這張報價單</button>
+    <div id="save-status" style="font-size:11px;color:#666;margin-top:6px;min-height:14px;"></div>
+
     <button class="pdf-btn" onclick="downloadPdf()">📄 下載 PDF</button>
   </div>
 
@@ -394,9 +397,16 @@ const CONTACTS = [
   { name: '黃筱娟（Lulu 姐姐）', phone: '0919-170-345' }
 ];
 const TAX_RATE = 0.05;
+// 部署好 Apps Script 網頁應用程式後，把網址貼在這裡（儲存功能才會生效）
+const APPS_SCRIPT_LOG_URL = '';
 let clientType = 'B';
 let items = []; // {uid, serviceId, name, unit, price, qty, taxIncluded, desc}
 let uidSeed = 1;
+
+function genQuoteUid() {
+  return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+let quoteUid = genQuoteUid();
 
 function initServiceSelect() {
   const sel = document.getElementById('service-select');
@@ -637,8 +647,90 @@ function downloadPdf() {
   }).from(el).save();
 }
 
+function getState() {
+  return {
+    clientType,
+    items,
+    funContact: document.getElementById('fun-contact').value,
+    clientName: document.getElementById('client-name').value,
+    clientTaxId: document.getElementById('client-tax-id').value,
+    clientContact: document.getElementById('client-contact').value,
+    clientPhone: document.getElementById('client-phone').value,
+    clientEmail: document.getElementById('client-email').value,
+    transportAmount: document.getElementById('transport-amount').value,
+    transportDesc: document.getElementById('transport-desc').value,
+    activityInfo: document.getElementById('activity-info').value,
+    validity: document.getElementById('validity').value,
+    notesText: document.getElementById('notes-text').value
+  };
+}
+
+function applyState(state) {
+  if (!state) return;
+  clientType = state.clientType || 'B';
+  document.querySelectorAll('.client-type-toggle .opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.type === clientType);
+  });
+  items = state.items || [];
+  uidSeed = items.reduce((max, i) => Math.max(max, i.uid || 0), 0) + 1;
+  document.getElementById('fun-contact').value = state.funContact || '0';
+  document.getElementById('client-name').value = state.clientName || '';
+  document.getElementById('client-tax-id').value = state.clientTaxId || '';
+  document.getElementById('client-contact').value = state.clientContact || '';
+  document.getElementById('client-phone').value = state.clientPhone || '';
+  document.getElementById('client-email').value = state.clientEmail || '';
+  document.getElementById('transport-amount').value = state.transportAmount || '';
+  document.getElementById('transport-desc').value = state.transportDesc || '';
+  document.getElementById('activity-info').value = state.activityInfo || '';
+  document.getElementById('validity').value = state.validity || '即日起 1 個月';
+  document.getElementById('notes-text').value = state.notesText || DEFAULT_NOTES;
+  renderItemsList();
+}
+
+function buildEditLink() {
+  const encoded = encodeURIComponent(JSON.stringify(getState()));
+  const baseUrl = location.origin + location.pathname;
+  return `${baseUrl}?uid=${quoteUid}&data=${encoded}`;
+}
+
+function saveQuote() {
+  const statusEl = document.getElementById('save-status');
+  if (!APPS_SCRIPT_LOG_URL) {
+    statusEl.textContent = '尚未接上記錄表，這個功能還在設定中。';
+    return;
+  }
+  const clientName = document.getElementById('client-name').value || '（未填客戶名稱）';
+  const totalText = document.getElementById('quote-doc').querySelector('.sum-row.total');
+  const totalDisplay = totalText ? totalText.textContent.replace('含稅總計：', '').trim() : '';
+  const editLink = buildEditLink();
+
+  navigator.clipboard && navigator.clipboard.writeText(editLink).catch(() => {});
+
+  const logUrl = `${APPS_SCRIPT_LOG_URL}?uid=${encodeURIComponent(quoteUid)}&client=${encodeURIComponent(clientName)}&total=${encodeURIComponent(totalDisplay)}&link=${encodeURIComponent(editLink)}`;
+  fetch(logUrl, { mode: 'no-cors' }).catch(() => {});
+
+  statusEl.textContent = '已儲存！編輯連結已複製到剪貼簿，也記錄進「報價單記錄」表了。';
+}
+
+function loadFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const uid = params.get('uid');
+  const data = params.get('data');
+  if (uid) quoteUid = uid;
+  if (data) {
+    try {
+      applyState(JSON.parse(data));
+      return true;
+    } catch (e) {
+      console.error('編輯連結資料解析失敗', e);
+    }
+  }
+  return false;
+}
+
 document.getElementById('notes-text').value = DEFAULT_NOTES;
 initServiceSelect();
+loadFromUrl();
 render();
 </script>
 </body>
