@@ -205,6 +205,7 @@
     border-bottom: 1px solid #e6dcf2;
     vertical-align: top;
   }
+  table.quote-table tr { page-break-inside: avoid; break-inside: avoid; }
   table.quote-table td.num { text-align: center; white-space: nowrap; }
   table.quote-table td.desc { font-size: 10.5px; color: #555; }
   table.quote-table tr.sum-row td { font-weight: 700; text-align: right; border-bottom: none; padding-top: 10px; }
@@ -218,9 +219,11 @@
     font-size: 12px;
     color: var(--purple);
     margin: 14px 0 6px;
+    page-break-after: avoid;
+    break-after: avoid;
   }
   #quote-doc .notes ol, #quote-doc .notes ul { margin: 0; padding-left: 18px; }
-  #quote-doc .notes li { margin-bottom: 3px; }
+  #quote-doc .notes li { margin-bottom: 3px; page-break-inside: avoid; break-inside: avoid; }
   #quote-doc .sign-block {
     display: flex;
     justify-content: space-between;
@@ -228,6 +231,8 @@
     padding-top: 16px;
     border-top: 1px dashed #ccc;
     font-size: 11px;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   #quote-doc .sign-block .col { width: 47%; }
   #quote-doc .sign-line { margin-top: 56px; border-bottom: 1px solid #999; }
@@ -245,6 +250,8 @@
   <div class="panel form-panel">
     <h1>💰 報價單產生器</h1>
     <div class="subtitle">選品項、填數量，右邊自動產出漂亮報價單</div>
+
+    <a href="https://docs.google.com/spreadsheets/d/1cA3tTVsxqpn_IifJwgfLlSQfcO5PR4xaHRMrRnCuC60/edit" target="_blank" rel="noopener" style="display:inline-block;margin-bottom:10px;font-size:12px;color:var(--blue);font-weight:700;text-decoration:none;">📋 查看所有已儲存的報價單 →</a>
 
     <h2 class="section-title">本張報價單聯絡人</h2>
     <label>FUN星球窗口（顯示於報價單上，Email／LINE 皆共用不變）</label>
@@ -638,12 +645,12 @@ function downloadPdf() {
   // 不指定 windowWidth：html2pdf 內部本來就會把內容複製進一個跟 PDF 頁面等寬的容器再截圖，
   // 若我們另外指定跟這個內建寬度不同的 windowWidth，容器會在模擬視窗裡置中，導致左右被裁掉。
   html2pdf().set({
-    margin: 0,
+    margin: [12, 0, 14, 0],
     filename: `FUN星球報價單_${clientName}_${today}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.sign-block'] }
   }).from(el).save();
 }
 
