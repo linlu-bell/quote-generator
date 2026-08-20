@@ -713,7 +713,7 @@ function saveQuote() {
 
   navigator.clipboard && navigator.clipboard.writeText(editLink).catch(() => {});
 
-  const logUrl = `${APPS_SCRIPT_LOG_URL}?uid=${encodeURIComponent(quoteUid)}&client=${encodeURIComponent(clientName)}&total=${encodeURIComponent(totalDisplay)}&link=${encodeURIComponent(editLink)}`;
+  const logUrl = `${APPS_SCRIPT_LOG_URL}?doc=quote&uid=${encodeURIComponent(quoteUid)}&client=${encodeURIComponent(clientName)}&total=${encodeURIComponent(totalDisplay)}&link=${encodeURIComponent(editLink)}`;
   fetch(logUrl, { mode: 'no-cors' }).catch(() => {});
 
   statusEl.textContent = '已儲存！編輯連結已複製到剪貼簿，也記錄進「報價單記錄」表了。';
