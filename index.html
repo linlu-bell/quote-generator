@@ -165,6 +165,9 @@
     color: #2a2a2a;
     font-size: 13px;
     line-height: 1.6;
+    /* 不用 -apple-system/BlinkMacSystemFont：html2canvas 對這兩個蘋果系統字型的中文字距量測不準，
+       某些字元組合（例如「動物」）截圖出來會疊字，換成微軟正黑體開頭就正常 */
+    font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
   }
   #quote-doc .doc-header {
     display: flex;
@@ -335,8 +338,8 @@ const SERVICES = [
   // B 企業與機構活動委辦
   { id:'B1', cat:'B 企業／機構活動委辦', name:'大型外場故事活動（60人以下）', unit:'場', price:6500, taxIncluded:false,
     desc:'大型繪本道具＋擴音，60分鐘含1位故事姐姐、2套道具、2個故事。高雄市區免車馬費，市區外依距離報價。訂金50%，取消規範：4週前告知退20%，4週內不退。' },
-  { id:'B1b', cat:'B 企業／機構活動委辦', name:'大型外場故事活動（61人以上）', unit:'場', price:8000, taxIncluded:false,
-    desc:'大型繪本道具＋擴音，60分鐘含1位故事姐姐、2套道具、2個故事，適用61人以上場次。高雄市區免車馬費，市區外依距離報價。訂金50%，取消規範：4週前告知退20%，4週內不退。' },
+  { id:'B1b', cat:'B 企業／機構活動委辦', name:'大型外場故事活動', unit:'場', price:8000, taxIncluded:false,
+    desc:'大型繪本道具＋擴音，60分鐘含1位故事姐姐、2套道具、2個故事。高雄市區免車馬費，市區外依距離報價。訂金50%，取消規範：4週前告知退20%，4週內不退。' },
   { id:'B2', cat:'B 企業／機構活動委辦', name:'到府故事活動（實體）', unit:'場', price:3000, taxIncluded:true,
     desc:'故事姐姐到指定室內場地講故事，60分鐘，最多12位小朋友，場地總人數不超過25人。若表演故事非FUN星球自有教案，需加收企劃編撰費。' },
   { id:'B3', cat:'B 企業／機構活動委辦', name:'線上故事活動（企業版）', unit:'場', price:10000, taxIncluded:false,
