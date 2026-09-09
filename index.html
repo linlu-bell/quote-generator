@@ -302,6 +302,11 @@
     </div>
     <div id="items-list"></div>
 
+    <label style="display:flex;align-items:center;gap:6px;margin-top:10px;cursor:pointer;">
+      <input type="checkbox" id="hide-total" style="width:auto;" onchange="render()">
+      <span style="font-weight:400;">不顯示總價（初期報價，廠商只需看個別項目費用時使用）</span>
+    </label>
+
     <h2 class="section-title">交通出勤費</h2>
     <label>金額（高雄市區活動留空或填 0，這格就不會出現在報價單上；外縣市活動請填算好的來回總額）</label>
     <input type="number" id="transport-amount" placeholder="0" oninput="render()">
@@ -531,6 +536,7 @@ function render() {
   const contact = document.getElementById('client-contact').value;
   const phone = document.getElementById('client-phone').value;
   const email = document.getElementById('client-email').value;
+  const hideTotal = document.getElementById('hide-total').checked;
   const transportAmount = parseFloat(document.getElementById('transport-amount').value) || 0;
   const transportDesc = document.getElementById('transport-desc').value;
   const activity = document.getElementById('activity-info').value;
@@ -606,8 +612,10 @@ function render() {
       <tr><th style="width:16%">品項</th><th style="width:8%">單位</th><th style="width:10%">單價</th><th style="width:7%">數量</th><th style="width:10%">小計</th><th>說明</th></tr>
       ${rows || transportRow ? '' : '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">尚未選擇服務品項</td></tr>'}
       ${rows}${transportRow}
+      ${hideTotal ? '' : `
       <tr class="sum-row"><td colspan="6">未稅金額：${fmt(untaxedTotal)}　｜　營業稅（5%）：${fmt(taxAmount)}${includedTotal ? `　｜　已含稅品項：${fmt(includedTotal)}` : ''}</td></tr>
       <tr class="sum-row total"><td colspan="6">含稅總計：${fmt(grandTotal)}</td></tr>
+      `}
     </table>
 
     <div class="notes">
@@ -617,8 +625,10 @@ function render() {
       <h3>備註</h3>
       ${renderNotes(notes)}
 
+      ${hideTotal ? '' : `
       <h3>訂金</h3>
       <div>本報價單含稅總計 ${fmt(grandTotal)} 元，確認合作需支付訂金 ${fmt(deposit)} 元（總額 50%）。</div>
+      `}
 
       <h3>報價單有效期</h3>
       <div>${validity}</div>
@@ -669,6 +679,7 @@ function getState() {
     clientEmail: document.getElementById('client-email').value,
     transportAmount: document.getElementById('transport-amount').value,
     transportDesc: document.getElementById('transport-desc').value,
+    hideTotal: document.getElementById('hide-total').checked,
     activityInfo: document.getElementById('activity-info').value,
     validity: document.getElementById('validity').value,
     notesText: document.getElementById('notes-text').value
@@ -691,6 +702,7 @@ function applyState(state) {
   document.getElementById('client-email').value = state.clientEmail || '';
   document.getElementById('transport-amount').value = state.transportAmount || '';
   document.getElementById('transport-desc').value = state.transportDesc || '';
+  document.getElementById('hide-total').checked = !!state.hideTotal;
   document.getElementById('activity-info').value = state.activityInfo || '';
   document.getElementById('validity').value = state.validity || '即日起 1 個月';
   document.getElementById('notes-text').value = state.notesText || DEFAULT_NOTES;
