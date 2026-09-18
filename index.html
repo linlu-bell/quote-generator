@@ -307,6 +307,11 @@
       <span style="font-weight:400;">不顯示總價（初期報價，廠商只需看個別項目費用時使用）</span>
     </label>
 
+    <label style="display:flex;align-items:center;gap:6px;margin-top:6px;cursor:pointer;">
+      <input type="checkbox" id="hide-sign" style="width:auto;" onchange="render()">
+      <span style="font-weight:400;">不顯示客戶簽章欄（還不需要簽署，僅供客戶參考費用時使用）</span>
+    </label>
+
     <h2 class="section-title">交通出勤費</h2>
     <label>金額（高雄市區活動留空或填 0，這格就不會出現在報價單上；外縣市活動請填算好的來回總額）</label>
     <input type="number" id="transport-amount" placeholder="0" oninput="render()">
@@ -537,6 +542,7 @@ function render() {
   const phone = document.getElementById('client-phone').value;
   const email = document.getElementById('client-email').value;
   const hideTotal = document.getElementById('hide-total').checked;
+  const hideSign = document.getElementById('hide-sign').checked;
   const transportAmount = parseFloat(document.getElementById('transport-amount').value) || 0;
   const transportDesc = document.getElementById('transport-desc').value;
   const activity = document.getElementById('activity-info').value;
@@ -634,6 +640,7 @@ function render() {
       <div>${validity}</div>
     </div>
 
+    ${hideSign ? '' : `
     <div class="sign-block">
       <div class="col">
         <div>客戶簽章（此報價單確認無誤，請簽章回傳，合作即成立）：</div>
@@ -646,6 +653,7 @@ function render() {
         <div>統一編號：00012776</div>
       </div>
     </div>
+    `}
   `;
 }
 
@@ -680,6 +688,7 @@ function getState() {
     transportAmount: document.getElementById('transport-amount').value,
     transportDesc: document.getElementById('transport-desc').value,
     hideTotal: document.getElementById('hide-total').checked,
+    hideSign: document.getElementById('hide-sign').checked,
     activityInfo: document.getElementById('activity-info').value,
     validity: document.getElementById('validity').value,
     notesText: document.getElementById('notes-text').value
@@ -703,6 +712,7 @@ function applyState(state) {
   document.getElementById('transport-amount').value = state.transportAmount || '';
   document.getElementById('transport-desc').value = state.transportDesc || '';
   document.getElementById('hide-total').checked = !!state.hideTotal;
+  document.getElementById('hide-sign').checked = !!state.hideSign;
   document.getElementById('activity-info').value = state.activityInfo || '';
   document.getElementById('validity').value = state.validity || '即日起 1 個月';
   document.getElementById('notes-text').value = state.notesText || DEFAULT_NOTES;
