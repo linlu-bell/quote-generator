@@ -226,6 +226,7 @@
     break-after: avoid;
   }
   #quote-doc .notes ol, #quote-doc .notes ul { margin: 0; padding-left: 18px; }
+  #quote-doc .bank-info { page-break-inside: avoid; break-inside: avoid; }
   #quote-doc .notes li { margin-bottom: 3px; page-break-inside: avoid; break-inside: avoid; }
   #quote-doc .sign-block {
     display: flex;
@@ -640,6 +641,15 @@ function render() {
 
       <h3>報價單有效期</h3>
       <div>${validity}</div>
+
+      <div class="bank-info">
+        <h3>匯款資訊</h3>
+        <div>
+          銀行：國泰世華銀行（013）東高雄分行<br>
+          戶名：星球能量無限但時間有限公司<br>
+          帳號：014-03-501665-2
+        </div>
+      </div>
     </div>
 
     ${hideSign ? '' : `
@@ -673,7 +683,7 @@ function downloadPdf() {
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.sign-block'] }
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.sign-block', '.bank-info'] }
   }).from(el).save();
 }
 
