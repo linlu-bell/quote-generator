@@ -226,7 +226,7 @@
     break-after: avoid;
   }
   #quote-doc .notes ol, #quote-doc .notes ul { margin: 0; padding-left: 18px; }
-  #quote-doc .bank-info { page-break-inside: avoid; break-inside: avoid; }
+  #quote-doc .keep { page-break-inside: avoid; break-inside: avoid; }
   #quote-doc .notes li { margin-bottom: 3px; page-break-inside: avoid; break-inside: avoid; }
   #quote-doc .sign-block {
     display: flex;
@@ -531,8 +531,8 @@ function renderNotes(notes) {
   }
   if (bulletBlock.length) {
     const [header, ...bullets] = bulletBlock;
-    html += `<div style="font-weight:700;color:var(--purple);margin:10px 0 4px;">${header}</div>`;
-    html += `<ul>${bullets.map(l => `<li>${l.replace(/^[・･]\s*/, '')}</li>`).join('')}</ul>`;
+    html += `<div class="keep"><div style="font-weight:700;color:var(--purple);margin:10px 0 4px;">${header}</div>`;
+    html += `<ul>${bullets.map(l => `<li>${l.replace(/^[・･]\s*/, '')}</li>`).join('')}</ul></div>`;
   }
   return html;
 }
@@ -628,21 +628,27 @@ function render() {
     </table>
 
     <div class="notes">
-      <h3>活動資訊</h3>
-      <div>${(activity || '（未填寫）').replace(/\n/g,'<br>')}</div>
+      <div class="keep">
+        <h3>活動資訊</h3>
+        <div>${(activity || '（未填寫）').replace(/\n/g,'<br>')}</div>
+      </div>
 
       <h3>備註</h3>
       ${renderNotes(notes)}
 
       ${hideTotal ? '' : `
-      <h3>訂金</h3>
-      <div>本報價單含稅總計 ${fmt(grandTotal)} 元，確認合作需支付訂金 ${fmt(deposit)} 元（總額 50%）。</div>
+      <div class="keep">
+        <h3>訂金</h3>
+        <div>本報價單含稅總計 ${fmt(grandTotal)} 元，確認合作需支付訂金 ${fmt(deposit)} 元（總額 50%）。</div>
+      </div>
       `}
 
-      <h3>報價單有效期</h3>
-      <div>${validity}</div>
+      <div class="keep">
+        <h3>報價單有效期</h3>
+        <div>${validity}</div>
+      </div>
 
-      <div class="bank-info">
+      <div class="bank-info keep">
         <h3>匯款資訊</h3>
         <div>
           銀行：國泰世華銀行（013）東高雄分行<br>
@@ -683,7 +689,7 @@ function downloadPdf() {
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.sign-block', '.bank-info'] }
+    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'li', '.keep', '.sign-block', '.client-block', '.doc-header'] }
   }).from(el).save();
 }
 
